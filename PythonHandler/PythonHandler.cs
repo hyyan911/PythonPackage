@@ -17,8 +17,9 @@ using System.Runtime.InteropServices;
 using PythonHandler;
 using static System.Net.WebRequestMethods;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 
-namespace PythonPackage
+namespace PythonHandler
 {
     /// <summary>
     /// Python解释器
@@ -50,17 +51,13 @@ namespace PythonPackage
             endcode = 0;
         }
 
-        /// <summary>
-        /// 预安装模块列表
-        /// </summary>
-        internal static List<string> moduleList { get; set; } = new List<string>()
+        #region 外部方法
+        internal static void InitializeConfig()
         {
-            "pandas",
-            "numpy",
-            "scipy",
-            "matplotlib",
-            "labview_automation"
-        };
+            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+            GetSystemParams();
+            PythonInstallPath = Path.Combine(Environment.CurrentDirectory, "Python" + PythonVersion);
+        }
 
         /// <summary>
         /// 初始化Python环境(注意此方法是阻塞的，所以一般情况下不要放在UI线程中执行)
@@ -69,9 +66,14 @@ namespace PythonPackage
         /// <param name="endingAction"></param>
         public static void Initialize(Action<string> installevent, Action endingAction)
         {
-            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+            InitializeConfig();
             AppDomain.CurrentDomain.ProcessExit += DosposePython;
-            InstallMessageDelegate = installevent;
+            InstallMessageDelegate += installevent;
+            if (IsPythonInstalled() && IsPipInstalled())
+            {
+                IsInitialized = true;
+                return;
+            }
             //安装python
             SetupPython();
 
@@ -96,15 +98,9 @@ namespace PythonPackage
                     }
                 }
 
-                foreach (var item in moduleList)
-                {
-                    DownloadWheelAndInstall(item);
-                }
-
                 InstallMessageDelegate?.Invoke("Python环境配置成功");
                 endingAction?.Invoke();
                 PythonFunctionListener.Initialize();
-                IsInitialized = true;
                 return;
             }
             catch (Exception ex)
@@ -116,33 +112,20 @@ namespace PythonPackage
             }
         }
 
-        private static void DosposePython(object sender, EventArgs e)
-        {
-            Dispose();
-        }
-
         /// <summary>
-        /// 销毁资源
+        /// 下载并安装包
         /// </summary>
-        internal static void Dispose()
-        {
-            PythonFunctionListener.Dispose();
-        }
-
-        private static bool IsPipInstalled()
-        {
-            return System.IO.File.Exists(Path.Combine(PythonInstallPath, "Scripts", "pip.exe"));
-        }
-
-        private static bool DownloadWheelAndInstall(string modulename)
+        /// <param name="modulename"></param>
+        /// <returns></returns>
+        public static bool DownloadWheelAndInstall(string modulename)
         {
             if (IsModuleInstalled(modulename)) return true;
             InstallMessageDelegate?.Invoke("正在下载" + modulename);
             string pippath = Path.Combine(PythonInstallPath, "Scripts", "pip.exe");
-            bool result = RunCommand(400000, "\"" + pippath + "\" " + "download " + modulename + " --only-binary=:all: -d \"" + Path.Combine(PythonInstallPath, "downloads") + "\" -i " + website1 + " --trusted-host " + webname);
+            bool result = RunCommand(400000, "\"" + pippath + "\" " + "download " + modulename + " --only-binary=:all: -d \"" + Path.Combine(PythonInstallPath, "downloads") + "\" -i " + website1 + " --trusted-host " + webname, out string str);
             if (result == false)
             {
-                result = RunCommand(400000, "\"" + pippath + "\" " + "download " + modulename + " -d \"" + Path.Combine(PythonInstallPath, "downloads") + "\"");
+                result = RunCommand(400000, "\"" + pippath + "\" " + "download " + modulename + " -d \"" + Path.Combine(PythonInstallPath, "downloads") + "\"", out str);
                 if (result == false)
                 {
                     InstallMessageDelegate?.Invoke("安装" + modulename + "失败");
@@ -150,7 +133,7 @@ namespace PythonPackage
                 }
             }
             InstallMessageDelegate?.Invoke("正在安装" + modulename);
-            result = RunCommand(400000, "\"" + pippath + "\" " + "install --no-index --find-links \"" + Path.Combine(PythonInstallPath, "downloads") + "\" " + modulename);
+            result = RunCommand(400000, "\"" + pippath + "\" " + "install --no-index --find-links \"" + Path.Combine(PythonInstallPath, "downloads") + "\" " + modulename, out str);
             if (result == false)
             {
                 InstallMessageDelegate?.Invoke("安装" + modulename + "失败");
@@ -160,6 +143,88 @@ namespace PythonPackage
             return true;
         }
 
+        /// <summary>
+        /// Python是否已经安装
+        /// </summary>
+        /// <returns></returns>
+        public static bool IsPythonInstalled()
+        {
+            return System.IO.File.Exists(Path.Combine(PythonInstallPath, "python.exe"));
+        }
+
+        /// <summary>
+        /// Pip是否已安装
+        /// </summary>
+        /// <returns></returns>
+        public static bool IsPipInstalled()
+        {
+            return System.IO.File.Exists(Path.Combine(PythonInstallPath, "Scripts", "pip.exe"));
+        }
+
+        /// <summary>
+        /// 安装pip
+        /// </summary>
+        /// <returns></returns>
+        public static bool InstallPip()
+        {
+            string text = Path.Combine(PythonInstallPath);
+            if (!Directory.Exists(text))
+            {
+                Directory.CreateDirectory(text);
+            }
+
+            string downloadUrl = "https://bootstrap.pypa.io/get-pip.py";
+            string outputFilePath = Path.Combine(text, "get-pip.py");
+            try
+            {
+                InstallMessageDelegate?.Invoke("正在下载pip...");
+                Download(downloadUrl, outputFilePath, delegate (float progress)
+                {
+                    InstallMessageDelegate?.Invoke("下载进度：" + Math.Round(progress, 2).ToString() + "%");
+                });
+                InstallMessageDelegate?.Invoke("下载完成!");
+            }
+            catch (Exception ex)
+            {
+                InstallMessageDelegate?.Invoke("下载pip时出现问题" + ex.Message);
+                return false;
+            }
+            RunCommand(40000, "cd \"" + PythonInstallPath + "\" && python.exe get-pip.py", out string str);
+            return true;
+        }
+
+        /// <summary>
+        /// 获取已安装包列表(包名，版本)
+        /// </summary>
+        /// <returns></returns>
+        public static Dictionary<string, string> GetInstalledPackageList()
+        {
+            if (!IsPipInstalled() || !IsPythonInstalled()) return new Dictionary<string, string>();
+            string pippath = Path.Combine(PythonInstallPath, "Scripts", "pip.exe");
+            bool result = RunCommand(3000, "\"" + pippath + "\" " + "list", out string output);
+
+            Dictionary<string, string> resultdic = new Dictionary<string, string>();
+
+            Regex reg = new Regex("[a-zA-Z_0-9]+[ ]+[0-9.]+");
+            MatchCollection coll = reg.Matches(output);
+            foreach (Match match in coll)
+            {
+                string name = match.Value.Substring(0, match.Value.IndexOf(" "));
+                string version = match.Value.Substring(match.Value.LastIndexOf(" ") + 1, match.Value.Length - match.Value.LastIndexOf(" ") - 1);
+                resultdic.Add(name, version);
+            }
+            return resultdic;
+        }
+
+        /// <summary>
+        /// 删除包
+        /// </summary>
+        public static bool DeletePackage(string name)
+        {
+            string pippath = Path.Combine(PythonInstallPath, "Scripts", "pip.exe");
+            bool result = RunCommand(3000, "\"" + pippath + "\" " + "uninstall " + name + " -y", out string output);
+            return result;
+        }
 
         /// <summary>
         /// 运行Python脚本中的函数，输入参数，返回结果
@@ -178,13 +243,34 @@ namespace PythonPackage
             return PythonFunctionListener.RunFunction(pypath, funcname, param.ToList(), (int)timeout.TotalMilliseconds);
         }
 
+        #endregion
+
+        private static bool IsPipSearchInstalled()
+        {
+            return System.IO.File.Exists(Path.Combine(PythonInstallPath, "Scripts", "pip_search.exe"));
+        }
+
+
+        private static void DosposePython(object sender, EventArgs e)
+        {
+            Dispose();
+        }
+
+        /// <summary>
+        /// 销毁资源
+        /// </summary>
+        internal static void Dispose()
+        {
+            PythonFunctionListener.Dispose();
+        }
+
 
         #region python环境配置部分
 
         /// <summary>
         /// 运行cmd指令
         /// </summary>
-        internal static bool RunCommand(int timeout, string commands)
+        internal static bool RunCommand(int timeout, string commands, out string output)
         {
             Process process = new Process();
             try
@@ -214,10 +300,12 @@ namespace PythonPackage
                     RedirectStandardOutput = true,
                     WindowStyle = ProcessWindowStyle.Hidden
                 };
+                string outstr = "";
                 process.StartInfo = startInfo;
                 process.OutputDataReceived += new DataReceivedEventHandler((sender, e) =>
                 {
                     InstallMessageDelegate?.Invoke(e.Data);
+                    outstr += e.Data;
                 });
                 process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) =>
                 {
@@ -227,6 +315,7 @@ namespace PythonPackage
                 if (res == false)
                 {
                     endcode = -1;
+                    output = outstr;
                     return false;
                 }
                 process.BeginErrorReadLine();
@@ -234,6 +323,7 @@ namespace PythonPackage
                 res = process.WaitForExit(timeout);
                 if (process.ExitCode != 0 || res == false)
                 {
+                    output = outstr;
                     return false;
                 }
                 try
@@ -243,11 +333,13 @@ namespace PythonPackage
                 catch (Exception)
                 {
                 }
+                output = outstr;
                 return true;
             }
             catch (Exception ex)
             {
                 InstallMessageDelegate?.Invoke("RunCommand: Error with command: '" + commands + "'\r\n" + ex.Message);
+                output = "";
                 return false;
             }
             finally
@@ -259,7 +351,7 @@ namespace PythonPackage
         /// <summary>
         /// 安装信息委托
         /// </summary>
-        internal static Action<string> InstallMessageDelegate = null;
+        public static event Action<string> InstallMessageDelegate = null;
 
         internal static string PythonInstallPath = "";
 
@@ -268,8 +360,6 @@ namespace PythonPackage
         /// </summary>
         internal static void SetupPython()
         {
-            GetSystemParams();
-            PythonInstallPath = Path.Combine(Environment.CurrentDirectory, "Python" + PythonVersion);
             try
             {
                 string res = "";
@@ -316,15 +406,6 @@ namespace PythonPackage
         }
 
         /// <summary>
-        /// Python是否已经安装
-        /// </summary>
-        /// <returns></returns>
-        internal static bool IsPythonInstalled()
-        {
-            return System.IO.File.Exists(Path.Combine(PythonInstallPath, "python.exe"));
-        }
-
-        /// <summary>
         /// 模块是否安装
         /// </summary>
         /// <param name="module"></param>
@@ -346,43 +427,11 @@ namespace PythonPackage
         }
 
         /// <summary>
-        /// 安装pip
-        /// </summary>
-        /// <returns></returns>
-        internal static bool InstallPip()
-        {
-            string text = Path.Combine(PythonInstallPath);
-            if (!Directory.Exists(text))
-            {
-                Directory.CreateDirectory(text);
-            }
-
-            string downloadUrl = "https://bootstrap.pypa.io/get-pip.py";
-            string outputFilePath = Path.Combine(text, "get-pip.py");
-            try
-            {
-                InstallMessageDelegate?.Invoke("正在下载pip...");
-                Download(downloadUrl, outputFilePath, delegate (float progress)
-                {
-                    InstallMessageDelegate?.Invoke("下载进度：" + Math.Round(progress, 2).ToString() + "%");
-                });
-                InstallMessageDelegate?.Invoke("下载完成!");
-            }
-            catch (Exception ex)
-            {
-                InstallMessageDelegate?.Invoke("下载pip时出现问题" + ex.Message);
-                return false;
-            }
-            RunCommand(40000, "cd \"" + PythonInstallPath + "\" && python.exe get-pip.py");
-            return true;
-        }
-
-        /// <summary>
         /// 系统名称
         /// </summary>
-        static string SystemName = "";
+        internal static string SystemName = "";
 
-        static string PythonVersion = "";
+        internal static string PythonVersion = "";
 
         static bool Is64Bit = false;
 
@@ -449,7 +498,7 @@ namespace PythonPackage
         }
 
         private static readonly HttpClient httpClient = new HttpClient() { };
-        public static void Download(string downloadUrl, string outputFilePath, Action<float> progress = null, CancellationToken token = default(CancellationToken))
+        internal static void Download(string downloadUrl, string outputFilePath, Action<float> progress = null, CancellationToken token = default(CancellationToken))
         {
             try
             {
