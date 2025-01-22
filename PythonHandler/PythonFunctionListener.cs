@@ -24,6 +24,8 @@ namespace PythonHandler
         {
         }
 
+        internal static bool IsInitialized = false;
+
         static object lockobject = new object();
 
         /// <summary>
@@ -57,6 +59,7 @@ namespace PythonHandler
             OutputBuffer = "";
             ErrorBuffer = "";
 
+            IsInitialized = true;
         }
 
         /// <summary>
@@ -102,7 +105,6 @@ namespace PythonHandler
                 ErrorBuffer = "";
             }
             string input = command;
-            PythonProcess.StandardInput.AutoFlush = true;
             string input1 = input.Replace(";", "\n");
             PythonProcess.StandardInput.WriteLine(input1);
             int time = 0;

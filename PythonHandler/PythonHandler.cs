@@ -222,7 +222,7 @@ namespace PythonHandler
         public static bool DeletePackage(string name)
         {
             string pippath = Path.Combine(PythonInstallPath, "Scripts", "pip.exe");
-            bool result = RunCommand(3000, "\"" + pippath + "\" " + "uninstall " + name + " -y", out string output);
+            bool result = RunCommand(3000, "\"" + pippath + "\" " + "uninstall " + name+" -y", out string output);
             return result;
         }
 
@@ -239,6 +239,11 @@ namespace PythonHandler
         {
             if (!IsInitialized)
                 throw new NullReferenceException("调用ExcuteFunction方法前需要先进行初始化");
+
+            if (!PythonFunctionListener.IsInitialized)
+            {
+                PythonFunctionListener.Initialize();
+            }
 
             return PythonFunctionListener.RunFunction(pypath, funcname, param.ToList(), (int)timeout.TotalMilliseconds);
         }
