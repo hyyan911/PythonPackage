@@ -222,7 +222,7 @@ namespace PythonHandler
         public static bool DeletePackage(string name)
         {
             string pippath = Path.Combine(PythonInstallPath, "Scripts", "pip.exe");
-            bool result = RunCommand(3000, "\"" + pippath + "\" " + "uninstall " + name+" -y", out string output);
+            bool result = RunCommand(3000, "\"" + pippath + "\" " + "uninstall " + name + " -y", out string output);
             return result;
         }
 
@@ -237,8 +237,8 @@ namespace PythonHandler
         /// <exception cref="NullReferenceException"></exception>
         public static dynamic ExcuteFunction(string pypath, string funcname, TimeSpan timeout, params object[] param)
         {
-            if (!IsInitialized)
-                throw new NullReferenceException("调用ExcuteFunction方法前需要先进行初始化");
+            if (!IsPythonInstalled() || !IsPipInstalled())
+                throw new NullReferenceException("Python环境未安装");
 
             if (!PythonFunctionListener.IsInitialized)
             {
