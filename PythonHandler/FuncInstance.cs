@@ -33,7 +33,7 @@ namespace PythonHandler
         /// <returns></returns>
         public dynamic Excute(int timeout, params object[] ps)
         {
-            return PythonFunctionListener.RunFunction(FuncPath, FuncName, ps.ToList(), timeout);
+            return Python_NetInterpretor.ExcuteFunction(FuncPath, FuncName, TimeSpan.FromMilliseconds(timeout), ps);
         }
     }
 
