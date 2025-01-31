@@ -18,6 +18,7 @@ using PythonHandler;
 using static System.Net.WebRequestMethods;
 using System.Net.Http;
 using System.Text.RegularExpressions;
+using File = System.IO.File;
 
 namespace PythonHandler
 {
@@ -246,6 +247,57 @@ namespace PythonHandler
             }
 
             return PythonFunctionListener.RunFunction(pypath, funcname, param.ToList(), (int)timeout.TotalMilliseconds);
+        }
+
+        /// <summary>
+        /// 获取所有函数
+        /// </summary>
+        /// <returns></returns>
+        public static List<FuncInstance> GetFuncs(string pypath)
+        {
+            if (!File.Exists(pypath))
+            {
+                throw new Exception("给定路径的脚本文件不存在：" + pypath);
+            }
+            List<FuncInstance> funcInstances = new List<FuncInstance>();
+
+            string codes = "";
+            //读取脚本文件
+            using (StreamReader re = new StreamReader(new FileStream(pypath, FileMode.OpenOrCreate)))
+            {
+                codes = re.ReadToEnd();
+            }
+            Regex reg = new Regex("def .+\\(.*\\):");
+            MatchCollection coll = reg.Matches(codes);
+            foreach (Match item in coll)
+            {
+                string functag = item.Value;
+                FuncInstance funcInstance = new FuncInstance();
+                #region 获取参数
+                reg = new Regex("\\(.*\\)");
+                string param = reg.Match(functag).Value.Replace("(", "");
+                param = param.Replace(")", "");
+                string[] ss = param.Split(',');
+                foreach (var p in ss)
+                {
+                    if (p == "") continue;
+                    funcInstance.InputParams.Add(p);
+                }
+                #endregion
+
+                #region 获取函数名
+                reg = new Regex("def .+\\(");
+                Match mat = reg.Match(functag);
+                string funcname = mat.Value.Replace("def ", "");
+                funcname = funcname.Replace("(", "");
+                funcInstance.FuncName = funcname;
+                funcInstance.FuncPath = pypath;
+                #endregion
+
+                funcInstances.Add(funcInstance);
+            }
+
+            return funcInstances;
         }
 
         #endregion
