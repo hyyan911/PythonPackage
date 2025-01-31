@@ -35,6 +35,15 @@ namespace PythonHandler
         {
             return Python_NetInterpretor.ExcuteFunction(FuncPath, FuncName, TimeSpan.FromMilliseconds(timeout), ps);
         }
+
+        /// <summary>
+        /// 执行函数
+        /// </summary>
+        /// <returns></returns>
+        public dynamic Excute(int timeout, List<object> ps)
+        {
+            return Python_NetInterpretor.ExcuteFunction(FuncPath, FuncName, TimeSpan.FromMilliseconds(timeout), ps);
+        }
     }
 
 

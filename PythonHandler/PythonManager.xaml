@@ -7,13 +7,14 @@
       mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800" Background="#FF1A1A1A">
     <Grid.RowDefinitions>
-        <RowDefinition Height="50"/>
+        <RowDefinition Height="40"/>
         <RowDefinition/>
         <RowDefinition Height="50"/>
     </Grid.RowDefinitions>
     <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*"/>
         <ColumnDefinition Width="2*"/>
+        <ColumnDefinition Width="*"/>
     </Grid.ColumnDefinitions>
     <controls:ListViewer Margin="5" Name="PythonPackageList" ItemContextMenuSelected="PythonPackageList_ItemContextMenuSelected" Grid.Row="1" Grid.RowSpan="1" ItemBarBackground="#FF4D4D4D" Background="#FF2E2E2E" ItemBarSelectedColor="#FF2C83FF">
         <controls:ListViewer.DataTemplate>
@@ -35,26 +36,30 @@
         </controls:ListViewer.UnEditableTextTemplate>
     </controls:ListViewer>
     <controls:DecoratedButton Grid.Row="2" Name="PackageRefreshBtn" FontSize="12" Margin="5" Click="RefreshPackages" Text="刷新" Background="#FF2E2E2E" MoveInColor="#FF488EFF" PressedColor="#FF0067CC" PressedForeground="White" MoveInForeground="White" Foreground="White"/>
-    <Grid Grid.ColumnSpan="2">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*"/>
-            <ColumnDefinition Width="2*"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition/>
-        </Grid.ColumnDefinitions>
-        <Label Content="包名称" HorizontalContentAlignment="Center" Grid.Column="0" VerticalContentAlignment="Center" Foreground="White"/>
-        <TextBox Name="InstallPackageNameText" Grid.Column="1" Margin="5" FontSize="12" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" BorderThickness="0" BorderBrush="{x:Null}" Background="#FF2E2E2E" Foreground="White" CaretBrush="White"/>
-        <controls:DecoratedButton x:Name="InstallBtn" Margin="5" FontSize="10" Grid.Column="2" Click="InstallPackage" Text="安装" Background="#FF2E2E2E" MoveInColor="#FF488EFF" PressedColor="#FF0067CC" PressedForeground="White" MoveInForeground="White" Foreground="White" Grid.ColumnSpan="1"/>
-        <Label Content="Python环境:" HorizontalContentAlignment="Center" Grid.Column="3" VerticalContentAlignment="Center" Foreground="White"/>
-        <Label Name="PythonVersion" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="White" Grid.Column="4"/>
-        <Label Content="Pip:" HorizontalContentAlignment="Center" Grid.Column="5" VerticalContentAlignment="Center" Foreground="White"/>
-        <Label Name="PipState" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="White" Grid.Column="6"/>
-        <controls:DecoratedButton x:Name="InstallPythonBtn" Margin="5" Grid.Column="7" FontSize="10" Click="InstallPython" Text="安装Python环境" Background="#FF2E2E2E" MoveInColor="#FF488EFF" PressedColor="#FF0067CC" PressedForeground="White" MoveInForeground="White" Foreground="White" Grid.ColumnSpan="1"/>
-    </Grid>
+    <controls:AutoScrollViewer Name="scroll1" Grid.ColumnSpan="4">
+        <controls:AutoScrollViewer.Content>
+            <Grid Height="{Binding ElementName=scroll1, Path=ActualHeight}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="50"/>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="50"/>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="50"/>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="120"/>
+                </Grid.ColumnDefinitions>
+                <Label Content="包名称" HorizontalContentAlignment="Center" Grid.Column="0" VerticalContentAlignment="Center" Foreground="White"/>
+                <TextBox Name="InstallPackageNameText" Grid.Column="1" Margin="5" FontSize="12" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" BorderThickness="0" BorderBrush="{x:Null}" Background="#FF2E2E2E" Foreground="White" CaretBrush="White"/>
+                <controls:DecoratedButton x:Name="InstallBtn" Margin="7" FontSize="10" Grid.Column="2" Click="InstallPackage" Text="安装" Background="#FF2E2E2E" MoveInColor="#FF488EFF" PressedColor="#FF0067CC" PressedForeground="White" MoveInForeground="White" Foreground="White" Grid.ColumnSpan="1"/>
+                <Label Content="Python环境:" HorizontalContentAlignment="Center" Grid.Column="3" VerticalContentAlignment="Center" Foreground="White"/>
+                <Label Name="PythonVersion" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="White" Grid.Column="4"/>
+                <Label Content="Pip:" HorizontalContentAlignment="Center" Grid.Column="5" VerticalContentAlignment="Center" Foreground="White"/>
+                <Label Name="PipState" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="White" Grid.Column="6"/>
+                <controls:DecoratedButton x:Name="InstallPythonBtn" Margin="7" Grid.Column="7" FontSize="10" Click="InstallPython" Text="安装Python环境" Background="#FF2E2E2E" MoveInColor="#FF488EFF" PressedColor="#FF0067CC" PressedForeground="White" MoveInForeground="White" Foreground="White" Grid.ColumnSpan="1"/>
+            </Grid>
+        </controls:AutoScrollViewer.Content>
+    </controls:AutoScrollViewer>
     <Grid Grid.Row="1" Grid.Column="1" Grid.RowSpan="2">
         <Grid.RowDefinitions>
             <RowDefinition Height="40"/>
@@ -69,4 +74,60 @@
         </controls:AutoScrollViewer>
         <controls:DecoratedButton Grid.Row="2" x:Name="ClearBtn" Margin="5" Click="ClearCommands" FontSize="12" Text="清除控制台信息" Background="#FF2E2E2E" MoveInColor="#FF488EFF" PressedColor="#FF0067CC" PressedForeground="White" MoveInForeground="White" Foreground="White"/>
     </Grid>
+    <controls:AutoScrollViewer Name="scroll2" Grid.Column="3" Grid.Row="1" Grid.RowSpan="3">
+        <controls:AutoScrollViewer.Content>
+            <Grid Grid.Column="3" Grid.Row="1" Grid.RowSpan="2" Width="{Binding ElementName=scroll2, Path=ActualWidth}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="35"/>
+                    <RowDefinition Height="35"/>
+                    <RowDefinition Height="35"/>
+                    <RowDefinition Height="35"/>
+                    <RowDefinition Height="35"/>
+                    <RowDefinition Height="150"/>
+                    <RowDefinition Height="35"/>
+                    <RowDefinition Height="35"/>
+                    <RowDefinition Height="35"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="50"/>
+                </Grid.ColumnDefinitions>
+                <Label Foreground="White" HorizontalContentAlignment="Center" Grid.ColumnSpan="2" VerticalContentAlignment="Center" Content="脚本测试" />
+                <Label Foreground="White" Grid.Row="1" HorizontalContentAlignment="Center" Grid.ColumnSpan="1" VerticalContentAlignment="Center" Content="脚本文件路径：" />
+                <TextBox Name="PythonFileDir" Grid.Row="2" Background="#FF2E2E2E" Margin="5" IsReadOnly="True" BorderThickness="0" Foreground="White" BorderBrush="{x:Null}" CaretBrush="White"/>
+                <controls:DecoratedButton Grid.Row="2" Grid.Column="1" TextAreaRatio="0" IconMargin="5" FontSize="11" Margin="5" Click="SelectPythonFilePath" Background="#FF2E2E2E" MoveInColor="#FF488EFF" PressedColor="#FF0067CC" PressedForeground="White" MoveInForeground="White" Foreground="White" IconSource="/PythonHandler;component/Images/directory.png"/>
+                <controls:ListViewer Name="InputParam" ItemBarBackground="Transparent" ItemBarSelectedColor="#FF13A0FF" ItemSelected="OpenInput" Grid.Row="5" Grid.ColumnSpan="2">
+                    <controls:ListViewer.DataTemplate>
+                        <controls:ViewerTemplate Descriptions="输入参数" DataDisplayWidth="*" DataType="String" Editable="False"/>
+                        <controls:ViewerTemplate Descriptions="值" DataDisplayWidth="2*" DataType="String" Editable="False"/>
+                    </controls:ListViewer.DataTemplate>
+                    <controls:ListViewer.HeaderLabelTemplate>
+                        <Label FontSize="12" Foreground="White" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                    </controls:ListViewer.HeaderLabelTemplate>
+                    <controls:ListViewer.UnEditableTextTemplate>
+                        <TextBlock FontSize="12" Foreground="White" Background="Transparent" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                    </controls:ListViewer.UnEditableTextTemplate>
+                    <controls:ListViewer.EditableBoxTemplate>
+                        <TextBox FontSize="12" CaretBrush="White" Background="Transparent" Foreground="White" BorderThickness="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                    </controls:ListViewer.EditableBoxTemplate>
+                </controls:ListViewer>
+                <controls:DecoratedButton Grid.Row="6" Grid.Column="0" ImagePlace="Left" TextAreaRatio="1" Click="RunPython" Text="运行" FontSize="11" IconMargin="5" Grid.ColumnSpan="2" Margin="5" Background="#FF2E2E2E" MoveInColor="#FF488EFF" PressedColor="#FF0067CC" PressedForeground="White" MoveInForeground="White" Foreground="White"/>
+                <controls:DecoratedButton Name="RunResult" Grid.Row="7" Grid.Column="0" ImagePlace="Left" TextAreaRatio="1" Click="ShowPythonResult" Text="查看运行结果" FontSize="11" IconMargin="5" Grid.ColumnSpan="2" Margin="5" Background="#FF2E2E2E" MoveInColor="#FF488EFF" PressedColor="#FF0067CC" PressedForeground="White" MoveInForeground="White" Foreground="White"/>
+                <Grid  Grid.Row="3"  Grid.ColumnSpan="2" Grid.RowSpan="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.5*"/>
+                        <ColumnDefinition Width="2*"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Foreground="White" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Content="执行函数" />
+                    <controls:ComboBox Name="PyhtonFunc" Grid.Column="1" Margin="5" FontSize="11" IconMargin="2" ImagePlace="Right" TextAreaRatio="0.9" Background="#FF2E2E2E" MoveInColor="#FF488EFF" PressedColor="#FF0067CC" PressedForeground="White" MoveInForeground="White" Foreground="White" IconSource="/PythonHandler;component/Images/downArrow.png"/>
+                    <Label Foreground="White" HorizontalContentAlignment="Center" Grid.Row="1" VerticalContentAlignment="Center" Content="超时时间(ms)" />
+                    <TextBox Name="Timeout" FontSize="12" Grid.Row="1" Grid.Column="1" Margin="4" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="5000" Background="#FF2E2E2E" BorderBrush="{x:Null}" Foreground="White" CaretBrush="White"/>
+                </Grid>
+            </Grid>
+        </controls:AutoScrollViewer.Content>
+    </controls:AutoScrollViewer>
 </Grid>

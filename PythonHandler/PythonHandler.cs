@@ -238,6 +238,11 @@ namespace PythonHandler
         /// <exception cref="NullReferenceException"></exception>
         public static dynamic ExcuteFunction(string pypath, string funcname, TimeSpan timeout, params object[] param)
         {
+            return ExcuteFunction(pypath, funcname, timeout, param.ToList());
+        }
+
+        internal static dynamic ExcuteFunction(string pypath, string funcname, TimeSpan timeout, List<object> param)
+        {
             if (!IsPythonInstalled() || !IsPipInstalled())
                 throw new NullReferenceException("Python环境未安装");
 
@@ -246,7 +251,7 @@ namespace PythonHandler
                 PythonFunctionListener.Initialize();
             }
 
-            return PythonFunctionListener.RunFunction(pypath, funcname, param.ToList(), (int)timeout.TotalMilliseconds);
+            return PythonFunctionListener.RunFunction(pypath, funcname, param, (int)timeout.TotalMilliseconds);
         }
 
         /// <summary>
