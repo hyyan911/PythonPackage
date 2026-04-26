@@ -191,6 +191,15 @@ namespace PythonHandler
                 return false;
             }
             RunCommand(40000, "cd \"" + PythonInstallPath + "\" && python.exe get-pip.py", out string str);
+            //配置.pth文件
+            var files = Directory.GetFiles(PythonInstallPath);
+            var pathfile = files.Where(x => Path.GetExtension(x).Contains("pth"));
+            if (pathfile.Count() != 0)
+            {
+                string content = File.ReadAllText(pathfile.ElementAt(0));
+                content += "\r\n" + "Lib\\site-packages";
+                File.WriteAllText(pathfile.ElementAt(0), content);
+            }
             return true;
         }
 
